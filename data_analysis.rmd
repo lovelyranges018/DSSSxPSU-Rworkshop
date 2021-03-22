@@ -1,0 +1,298 @@
+---
+title: "Demystifying R: DSSS x PSU workshop"
+author: "Warren Ho Kin"
+date: "March 2021"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# install.packages("prettydoc")
+```
+
+| Topics Covered                                        | Min | 
+|-------------------------------------------------------|-----|
+| Introduction                                          | 5   |
+| Introduction to R studio                              | 5   |
+| Data manipulation                                     | 5   |
+| Reading Data                                          | 5   |
+| Working with Packages and Libraries                   | 5   |
+| Beginner visualization                                | 10  |
+| Context on the data                                   | 5   |
+| Data cleaning                                         | 10  |
+| Data exploration!                                     | 10  |
+
+## R studio
+- R/ R Studio/ Jupyter / R Studio Cloud
+- Code editor: Where you can read and edit code
+- Workspace/Variable environment: Where data and variables are listed
+- Console: Code log and output for code
+- R Markdown vs R script
+
+### Useful shortcuts
+- Running line or selection of code: **Ctrl + Enter**
+- Running Code Chunks: **Ctrl + Shift + Enter**
+- Insert new code chunk : **Ctrl + Alt + I** 
+
+## Data manipulation: A fancy calculator
+There are often more than one way to do things in R
+```{r, results='hide'}
+# literal 
+1+2+3+4+5
+
+# Colon form
+1:100
+
+# function
+seq(1,100,10)
+
+# Function of function
+sum(seq(1:5))
+
+# Vectors
+myNumericVector = c(1:5)
+sum(myNumericVector)
+
+# Vector addition
+myOtherNumVector = seq(from = 10, to = 50, by = 10)
+myNumericVector + myOtherNumVector
+
+# # Need help to know what functions do?
+# help(seq)
+# ?seq
+```
+
+### Reading Data      
+One of the main ways people use R is to work with data to do visualization or statistical analysis. To do this, it's best to put the data file in the same folder as your **R Project**, and then use a function to read it in to your R Session.
+
+```{r}
+# Tell your program where you files are
+setwd("C:/Users/Whokin/OneDrive - sfu.ca/University/Courses/DSSS/R workshop")
+myData <- read.csv("totally_normal_data.csv", header = FALSE)
+```
+
+The head() function is helpful to see what the data looks like. So is the str() function.
+
+```{r}
+head(myData, n = 10)
+str(myData)
+```
+The summary() function helps understand the distribution of your data.
+
+```{r}
+summary(myData)
+```
+
+Rename the columns to something descriptive.
+
+```{r}
+colnames(myData) <- c("Barney", "Friends")
+summary(myData)
+```
+
+### Working with Packages and Libraries
+The R language comes with a lot of features built-in, especially for data manipulation.
+R is also an open-source language which mean that anyone can contribute to the language.
+This is done through **packages** which are bundles of code to add extra features.
+```{r}
+# ??tidyverse
+# install.packages(tidyverse)
+# install.packages(ggplot2)
+library(tidyverse) # Data exploration and function pipeline
+library(ggplot2) # Visualization
+```
+
+## Beginner Visualization     
+```{r}
+# Base R
+plot(myData)
+
+# ggplot
+ggplot(myData, aes(x = Barney, y = Friends))+
+  geom_point() # Data points layers
+```
+
+Credit for the dataset to:
+https://cran.r-project.org/web/packages/datasauRus/vignettes/Datasaurus.html
+
+# Colours and pretty plots
+
+```{r}
+# Libraries for colouring
+library(ggthemes)
+library(viridis)
+
+ggplot(myData, aes(x = Barney, y = Friends, color = Friends))+
+  geom_point()+
+  ggtitle("Land Before Time")+
+  xlab("Dinosaur Height")+
+  ylab("Dinosaur Width")+
+  theme_few()+scale_color_viridis()
+
+# # Plots are data objects where we can stack layers
+# p <- ggplot(myData, aes(x = Barney, y = Friends, color = Friends))+
+#   geom_point()
+# 
+# p = p +
+#   ggtitle("Land Before Time")+
+#   xlab("Dinosaur Height")+
+#   ylab("Dinosaur Width")+
+#   theme_few()+scale_color_viridis()
+# p
+```
+Let's get our hands dirty now.
+
+# 5 Personality data
+
+### Research Question/Problem Statement
+What is our research question?  
+- Hypothesis: Does scoring high in conscientiousness correlate with low neuroticism?
+
+### Data Collection/Measurement Strategy
+
+What type of data is required  
+- Data sources: Open Source Psychometrics Project  
+- Dataset contains 1,015,342 questionnaire but we will work on the first 1,000  
+- URL: https://www.kaggle.com/tunguz/big-five-personality-test  
+
+### Reading Data
+We often want to import data instead of generating or typing them out.  
+Let's import the first 1,000 responses to our survey.
+
+Note: The file is over a million rows large so we cut it down for practical use here.  
+We wanted to offer a real-life size file to play with but for now, we'll stick to a small subset.  
+I made a small script to prepare the data a bit. Feel free to have a look at it.  
+```{r}
+source("data_preperation.R")
+
+# Load data
+df <- read.csv("personality-data-subset.csv")
+```
+
+It's often useful to look at the data before doing anything else.
+```{r , results='hide'}
+# Let's look at the size of our data
+dim(df)
+
+# Peek at the first 10 lines
+head(df,n = 10) # If n is omitted, it also defaults to 5
+
+# look at the data type of the columns and some content
+# Note: This can quickly become overwhelming with a large number of columns
+df %>% filter() %>% glimpse()
+```
+
+### Cleaning
+In many cases, data is dirty and messy. Let's search for pesky missing values.
+There are multiple ways to deal with those but for now we will just get rid of them.
+```{r, results='hide'}
+# Check the whole data frame for missing values
+any(is.na(df)) 
+
+# Number of NA for each column
+na_count = sapply(df, function(x) sum(is.na(x)))
+print(na_count)
+
+# # Bar plot form
+# na_count %>%
+#   barplot(main ="Count of missing values per column",
+#           horiz = TRUE)
+
+# Look at how many rows are with NA values
+sum(!complete.cases(df))
+sum(!complete.cases(df)) / nrow(df) # In percentage
+
+# Use filtering from dyplyr. This finds the rows where there are NAs
+df_clean = na.omit(df)
+```
+
+
+## Visualization
+
+# Participants' nationality distribution
+```{r}
+# Get the count of participants by country
+countries <- df_clean %>% 
+  group_by(country) %>% 
+  tally(sort = TRUE) %>% 
+  slice(1:5)
+
+head(countries, n = 10)
+
+ggplot(countries, aes(reorder(country, -n), n)) +
+  geom_bar(stat = 'identity', fill= c("#E69F00", "#56B4E9", "#009E73",
+          "#F0E442", "#0072B2")) +
+  ggtitle("Number of respondents by country") +
+  xlab("Country") + ylab("Number of respondents") 
+```
+
+# Distribution
+For each question, show the distribution of responses
+```{r}
+# install.packages("ggpubr")
+# install.packages("RColorBrewer")
+
+library(ggpubr)
+library(RColorBrewer)
+# display.brewer.all()
+
+for(i in 1:4){
+  question = paste("EXT", i, sep = "")
+  hist(df_clean[, question], 
+       main = question,
+       xlab = "Response",
+       col = brewer.pal(10 , "Set3")[i])
+}
+```
+
+It's often easier to work with subsets of data at a time
+```{r}
+# Find entries where the column name starts with a key text
+EXT = df_clean[,startsWith(colnames(df_clean), prefix = "EXT")]
+EST = df_clean[,startsWith(colnames(df_clean), prefix = "EST")]
+AGR = df_clean[,startsWith(colnames(df_clean), prefix = "AGR")]
+CSN = df_clean[,startsWith(colnames(df_clean), prefix = "CSN")]
+OPN = df_clean[,startsWith(colnames(df_clean), prefix = "OPN")]
+# 'Extroversion   -   Neuroticism   -   Agreeableness   -   Conscientiousness   -   Openness'
+```
+
+We want to see the correlation between questions
+```{r}
+library(corrplot)
+EXT_corr = cor(EXT[1:10])
+corrplot(EXT_corr, method = "color")
+
+EST_corr = cor(EST[1:10])
+corrplot(EST_corr, method = "color")
+
+AGR_corr = cor(AGR[1:10])
+corrplot(AGR_corr, method = "color")
+
+CSN_corr = cor(CSN[1:10])
+corrplot(CSN_corr, method = "color")
+
+OPN_corr = cor(OPN[1:10])
+corrplot(OPN_corr, method = "color")
+```
+
+```{r}
+questions_corr = cor(x = df_clean[1:50])
+corrplot(questions_corr, method = "color", tl.cex = .5)
+```
+
+# Connect with the Data Science Student Society:
+Discord: https://discord.gg/rcUvvYBUSF  
+FB: SFU Data Science Student Society - DSSS (https://www.facebook.com/sfudsss)  
+
+# Connect with the Psychology Student Union:
+IG: sfu_psu (https://www.instagram.com/sfu_psu/)  
+FB: SFU Psychology Student Union (https://www.facebook.com/SFUPsychologyStudentUnion)  
+Discord: https://discord.gg/ZahuFF2Pkp  
+
+### Useful link
+https://www.rdocumentation.org/
+https://www.yanqixu.com/My_R_Cheatsheet/data_cleaning_cheatsheet.html#what%E2%80%99s_this_for
+https://www.datanovia.com/en/blog/ggplot-colors-best-tricks-you-will-love/
