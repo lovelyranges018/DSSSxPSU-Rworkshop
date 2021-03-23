@@ -166,7 +166,7 @@ Note: The file is over a million rows large so we cut it down for practical use 
 We wanted to offer a real-life size file to play with but for now, we'll stick to a small subset.  
 I made a small script to prepare the data a bit. Feel free to have a look at it.  
 ```{r}
-source("data_preperation.R")
+#source("data_preperation.R")
 
 # Load data
 df <- read.csv("personality-data-subset.csv")
